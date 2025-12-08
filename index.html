@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Pose Classifier AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;margin:0;display:flex;flex-direction:column;min-height:100vh;color:#333}
+        header{background:#fff;padding:15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+        .logo{color:#3b82f6;font-weight:700;font-size:1.2rem}
+        nav a{text-decoration:none;color:#666;margin-left:15px;font-size:0.95rem}
+        nav a.active{color:#3b82f6;font-weight:700}
+        main{flex:1;padding:20px 10px;display:flex;justify-content:center}
+        .card{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:500px;box-shadow:0 4px 15px rgba(0,0,0,.05);text-align:center}
+        h1{color:#3b82f6;margin:0 0 15px;font-size:1.5rem}
+        .view-box{width:100%;aspect-ratio:1/1;background:#000;border-radius:10px;margin-bottom:20px;position:relative;display:flex;justify-content:center;align-items:center;overflow:hidden}
+        canvas{width:100%;height:100%;object-fit:cover;display:none}
+        #hold{color:#888} #hold i{font-size:3rem;margin-bottom:10px}
+        .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:15px}
+        button{padding:10px 15px;border:none;border-radius:6px;color:#fff;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem}
+        .g{background:#10b981}.gy{background:#6b7280}.r{background:#ef4444}.o{background:#f59e0b}
+        .res{background:#f1f5f9;padding:10px;margin-bottom:6px;border-radius:5px;border-left:4px solid #3b82f6;display:flex;justify-content:space-between;font-size:0.95rem}
+        footer{font-size:.8rem;color:#999;text-align:center;padding:15px;background:#fff}
+        #load{display:none;position:absolute;color:#fff;font-size:2rem}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><i class="fa-solid fa-person-rays"></i> Pose AI</div>
+        <nav><a href="index.html" class="active">Trang Chủ</a><a href="about.html">Giới Thiệu</a></nav>
+    </header>
+    <main>
+        <div class="card">
+            <h1>Nhận Diện Tư Thế</h1>
+            <div class="view-box">
+                <div id="hold"><i class="fa-solid fa-camera"></i><p>Sẵn sàng</p></div>
+                <canvas id="cv"></canvas>
+                <div id="load"><i class="fa-solid fa-spinner fa-spin"></i></div>
+            </div>
+            <div class="btns">
+                <input type="file" id="up" hidden accept="image/*" onchange="hImg(this)">
+                <button class="g" onclick="$('up').click()"><i class="fa-solid fa-image"></i>Tải ảnh</button>
+                <button id="bs" class="gy" onclick="init()"><i class="fa-solid fa-video"></i>Mở camera</button>
+                <button id="bp" class="r" style="display:none" onclick="stop()"><i class="fa-solid fa-stop"></i> Dừng camera</button>
+                <button id="bw" class="o" style="display:none" onclick="swCam()"><i class="fa-solid fa-rotate"></i> Đổi camera</button>
+            </div>
+            <div id="lbl"></div>
+        </div>
+    </main>
+    <footer>&copy; © 2025 Dự án AI Giám Sát Tư Thế. Thực hiện bởi Lê Hưng và Lê Dũng.</footer>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+    <script>
+        const U = "./my_model/", $ = id => document.getElementById(id);
+        let m, wc, ctx, max, isRun = false, face = "user", lastT = 0;
+
+        async function load() {
+            if (m) return true;
+            $("load").style.display = "block";
+            try {
+                m = await tmPose.load(U + "model.json", U + "metadata.json");
+                max = m.getTotalClasses();
+                $("load").style.display = "none";
+                return true;
+            } catch { $("load").style.display = "none"; return false; }
+        }
+
+        async function init() {
+            if (!await load()) return;
+            if (wc && isRun) stop();
+            try {
+                wc = new tmPose.Webcam(500, 500, face === "user");
+                await wc.setup({ facingMode: face });
+                await wc.play();
+                isRun = true;
+                setCvs(500, 500);
+                ui(true);
+                requestAnimationFrame(loop);
+            } catch {}
+        }
+
+        async function loop() {
+            if (!isRun) return;
+            wc.update();
+        
+            const { pose, posenetOutput } = await m.estimatePose(wc.canvas);
+            
+            ctx.drawImage(wc.canvas, 0, 0, $("cv").width, $("cv").height);
+            if(pose) {
+                tmPose.drawKeypoints(pose.keypoints, 0.5, ctx);
+                tmPose.drawSkeleton(pose.keypoints, 0.5, ctx);
+            }
+
+            if (Date.now() - lastT > 1000) {
+                await predictResult(posenetOutput);
+                lastT = Date.now();
+            }
+            
+            requestAnimationFrame(loop);
+        }
+
+        async function predictResult(posenetOutput) {
+            const p = await m.predict(posenetOutput);
+            let html = "";
+            for (let i = 0; i < max; i++) 
+                html += `<div class="res"><span>${p[i].className}</span><b>${(p[i].probability*100).toFixed(0)}%</b></div>`;
+            $("lbl").innerHTML = html;
+        }
+
+        async function hImg(inp) {
+            if (!inp.files[0] || !await load()) return;
+            stop();
+            const img = new Image();
+            img.src = URL.createObjectURL(inp.files[0]);
+            img.onload = async () => {
+                setCvs(img.width, img.height);
+                ctx.drawImage(img, 0, 0, $("cv").width, $("cv").height);
+                ui(true); $("bp").style.display = $("bw").style.display = "none";
+                
+                const { pose, posenetOutput } = await m.estimatePose(img);
+                if(pose) {
+                    tmPose.drawKeypoints(pose.keypoints, 0.5, ctx);
+                    tmPose.drawSkeleton(pose.keypoints, 0.5, ctx);
+                }
+                await predictResult(posenetOutput);
+            }
+        }
+
+        function setCvs(w, h) {
+            const c = $("cv"); c.width = w; c.height = h;
+            ctx = c.getContext("2d"); c.style.display = "block"; $("hold").style.display = "none";
+        }
+
+        function ui(live) {
+            $("bs").style.display = live ? "none" : "flex";
+            $("bp").style.display = $("bw").style.display = live ? "flex" : "none";
+        }
+
+        async function stop() {
+            if (wc && isRun) { wc.stop(); isRun = false; }
+            ui(false); $("cv").style.display = "none"; $("hold").style.display = "flex"; $("lbl").innerHTML = "";
+        }
+
+        async function swCam() {
+            if (!isRun) return;
+            face = face === "user" ? "environment" : "user";
+            await init();
+        }
+    </script>
+</body>
+</html>

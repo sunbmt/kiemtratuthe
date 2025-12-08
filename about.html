@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Giới Thiệu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;margin:0;display:flex;flex-direction:column;min-height:100vh;color:#333}
+        header{background:#fff;padding:15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+        .logo{color:#3b82f6;font-weight:700;font-size:1.2rem}
+        nav a{text-decoration:none;color:#666;margin-left:15px;font-size:0.95rem}
+        nav a.active{color:#3b82f6;font-weight:700}
+        main{flex:1;padding:20px 10px;display:flex;justify-content:center}
+        .card{background:#fff;border-radius:12px;padding:30px 20px;width:100%;max-width:600px;box-shadow:0 4px 15px rgba(0,0,0,.05);line-height:1.6}
+        h1{color:#3b82f6;margin:0 0 10px;text-align:center;font-size:1.5rem}
+        h2{color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:5px;margin-top:25px;font-size:1.1rem}
+        ul{padding-left:20px;margin:10px 0} li{margin-bottom:5px}
+        footer{font-size:.8rem;color:#999;text-align:center;padding:15px;background:#fff}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><i class="fa-solid fa-person-rays"></i> Pose AI</div>
+        <nav><a href="index.html">Trang Chủ</a><a href="about.html" class="active">Giới Thiệu</a></nav>
+    </header>
+    <main>
+        <div class="card">
+            <h1>Về Dự Án</h1>
+            <p style="text-align:center;color:#666;font-style:italic">Hỗ trợ điều chỉnh tư thế ngồi học.</p>
+            
+            <h2>Mục tiêu</h2>
+            <p>Giúp học sinh phòng tránh cong vẹo cột sống và cận thị thông qua AI giám sát thời gian thực.</p>
+
+            <h2>Công nghệ</h2>
+            <ul>
+                <li><strong>Core:</strong> Google Teachable Machine.</li>
+                <li><strong>Model:</strong> PoseNet (Khung xương).</li>
+                <li><strong>Run:</strong> TensorFlow.js (Web-based).</li>
+            </ul>
+        </div>
+    </main>
+    <footer>&copy; © 2025 Dự án AI Giám Sát Tư Thế. Thực hiện bởi Lê Hưng và Lê Dũng.</footer>
+</body>
+</html>
